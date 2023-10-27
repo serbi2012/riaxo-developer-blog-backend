@@ -6,6 +6,7 @@ const cors = require("cors");
 
 const indexRouter = require("./routes/index");
 const postRouter = require("./routes/post");
+const imageRouter = require("./routes/image");
 
 const mongoDBConnect = require("./config/mongoDbConnect");
 const ENV_VAR = require("./config/environmentVariable");
@@ -23,6 +24,7 @@ app.use(cookieParser());
 
 app.use("/", indexRouter);
 app.use("/post", postRouter);
+app.use("/image", imageRouter);
 
 app.use(errorHandler);
 

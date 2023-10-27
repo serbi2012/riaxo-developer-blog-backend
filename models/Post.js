@@ -6,6 +6,7 @@ const postSchema = new mongoose.Schema(
         tags: [{ type: String }],
         content: { type: String },
         summaryContent: { type: String },
+        thumbnailURL: { type: String },
     },
     { timestamps: true },
 );

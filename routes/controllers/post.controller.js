@@ -67,6 +67,7 @@ exports.createPost = async (req, res, next) => {
             content: req.body.params.content,
             summaryContent: combinedSummary,
             tags: req.body.params.tags,
+            thumbnailURL: req.body.params.thumbnailURL,
         };
 
         await Post.create(body);
@@ -104,6 +105,7 @@ exports.updatePost = async (req, res, next) => {
             content: req.body.params.content,
             summaryContent: combinedSummary,
             tags: req.body.params.tags,
+            thumbnailURL: req.body.params.thumbnailURL,
         };
 
         await Post.findByIdAndUpdate(postId, body);
