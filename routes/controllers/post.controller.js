@@ -1,12 +1,14 @@
 const ENV_VAR = require("../../config/environmentVariable");
 const Post = require("../../models/Post");
 const axios = require("axios");
+const cheerio = require("cheerio");
 
 exports.getPostList = async (req, res, next) => {
     try {
-        const allDocuments = await Post.find({
-            ...(req?.query._id && { _id: req?.query._id }),
-        });
+        const query = { ...(req?.query._id && { _id: req?.query._id }) };
+        const sortOptions = { createdAt: -1 };
+
+        const allDocuments = await Post.find(query).sort(sortOptions).exec();
 
         res.send({ data: allDocuments });
     } catch (err) {
@@ -16,6 +18,9 @@ exports.getPostList = async (req, res, next) => {
 
 exports.createPost = async (req, res, next) => {
     try {
+        const $ = await cheerio.load(req.body.params.content);
+        const textContent = $.text();
+
         const summaryContent = await axios({
             method: "POST",
             url: "https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize",
@@ -26,7 +31,7 @@ exports.createPost = async (req, res, next) => {
             data: {
                 document: {
                     title: req.body.params.title,
-                    content: req.body.params.content,
+                    content: textContent,
                 },
                 option: {
                     language: "ko",
@@ -54,10 +59,35 @@ exports.createPost = async (req, res, next) => {
 
 exports.updatePost = async (req, res, next) => {
     try {
+        const $ = await cheerio.load(req.body.params.content);
+        const textContent = $.text();
+
+        const summaryContent = await axios({
+            method: "POST",
+            url: "https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize",
+            headers: {
+                "X-NCP-APIGW-API-KEY-ID": ENV_VAR?.NAVER_CLIENT_ID,
+                "X-NCP-APIGW-API-KEY": ENV_VAR?.NAVER_CLIENT_SECRET,
+            },
+            data: {
+                document: {
+                    title: req.body.params.title,
+                    content: textContent,
+                },
+                option: {
+                    language: "ko",
+                    model: "general",
+                    tone: 2,
+                    summaryCount: 3,
+                },
+            },
+        });
+
         const postId = req.body.params.id;
         const body = {
             title: req.body.params.title,
             content: req.body.params.content,
+            summaryContent: summaryContent?.data?.summary,
             tags: req.body.params.tags,
         };
 
