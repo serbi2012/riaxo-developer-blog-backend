@@ -1,19 +1,19 @@
-const errorMessage = require("../constant/errorMessage");
-
-function notFoundError(req, res, next) {
-  const err = new Error(errorMessage.NOT_FOUND);
-
-  err.status = 404;
-
-  next(err);
-}
-
 function errorHandler(err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+    const errorDetails = {
+        status: err.status || 500,
+        message: err.message,
+        route: req.originalUrl,
+        method: req.method,
+        requestData: req.body,
+    };
 
-  res.status(err.status || 500);
-  res.render("error");
+    console.error(`Error in ${errorDetails.method} ${errorDetails.route}: ${errorDetails.message}`);
+    if (req.app.get("env") === "development") {
+        console.error(err.stack);
+        console.error("Request Data:", errorDetails.requestData);
+    }
+
+    res.status(errorDetails.status).json(errorDetails);
 }
 
-module.exports = { notFoundError, errorHandler };
+module.exports = { errorHandler };
