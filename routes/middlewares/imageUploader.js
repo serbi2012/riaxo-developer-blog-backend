@@ -22,6 +22,7 @@ const imageUploader = multer({
         contentType: multerS3.AUTO_CONTENT_TYPE,
         key: (req, file, callback) => {
             const uploadDirectory = req.query.directory ?? "";
+
             callback(null, `${uploadDirectory}/${Date.now()}_${file.originalname}`);
         },
     }),

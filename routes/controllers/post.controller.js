@@ -42,10 +42,12 @@ exports.getPostList = async (req, res, next) => {
 };
 
 exports.createPost = async (req, res, next) => {
-    try {
-        const $ = await cheerio.load(req.body.params.content);
-        const textContent = $.text();
+    const $ = await cheerio.load(req.body.params.content);
+    const textContent = $.text();
 
+    let combinedSummary;
+
+    try {
         const chunkSize = 1800;
         const chunks = [];
         for (let i = 0; i < textContent.length; i += chunkSize) {
@@ -60,8 +62,12 @@ exports.createPost = async (req, res, next) => {
             summaryContents.push(summaryContent);
         }
 
-        const combinedSummary = await generateSummary(summaryContents.join(" "), req.body.params.title, 1);
+        combinedSummary = await generateSummary(summaryContents.join(" "), req.body.params.title, 1);
+    } catch (error) {
+        combinedSummary = textContent.slice(0, 300);
+    }
 
+    try {
         const body = {
             title: req.body.params.title,
             content: req.body.params.content,
@@ -79,10 +85,12 @@ exports.createPost = async (req, res, next) => {
 };
 
 exports.updatePost = async (req, res, next) => {
-    try {
-        const $ = await cheerio.load(req.body.params.content);
-        const textContent = $.text();
+    const $ = await cheerio.load(req.body.params.content);
+    const textContent = $.text();
 
+    let combinedSummary;
+
+    try {
         const chunkSize = 1800;
         const chunks = [];
         for (let i = 0; i < textContent.length; i += chunkSize) {
@@ -97,8 +105,12 @@ exports.updatePost = async (req, res, next) => {
             summaryContents.push(summaryContent);
         }
 
-        const combinedSummary = await generateSummary(summaryContents.join(" "), req.body.params.title, 1);
+        combinedSummary = await generateSummary(summaryContents.join(" "), req.body.params.title, 1);
+    } catch (error) {
+        combinedSummary = textContent.slice(0, 300);
+    }
 
+    try {
         const postId = req.body.params.id;
         const body = {
             title: req.body.params.title,
