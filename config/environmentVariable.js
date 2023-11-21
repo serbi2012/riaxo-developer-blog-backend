@@ -7,6 +7,7 @@ const ENV_VAR = {
     NAVER_CLIENT_SECRET: process.env.NAVER_CLIENT_SECRET,
     ACCESS_KEY_ID: process.env.ACCESS_KEY_ID,
     SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 };
 
 module.exports = ENV_VAR;
