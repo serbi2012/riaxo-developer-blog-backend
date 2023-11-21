@@ -1,7 +1,39 @@
 const { OpenAI } = require("openai");
-const { OPENAI_API_KEY } = require("../../config/environmentVariable");
+const axios = require("axios");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { v4: uuidv4 } = require("uuid");
+const sharp = require("sharp");
+const ENV_VAR = require("../../config/environmentVariable");
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const s3 = new S3Client({
+    region: "ap-northeast-2",
+    credentials: {
+        accessKeyId: ENV_VAR?.ACCESS_KEY_ID,
+        secretAccessKey: ENV_VAR?.SECRET_ACCESS_KEY,
+    },
+    sslEnabled: false,
+    s3ForcePathStyle: true,
+    signatureVersion: "v4",
+});
+
+const openai = new OpenAI({ apiKey: ENV_VAR?.OPENAI_API_KEY });
+
+async function uploadToS3(buffer, fileName, contentType) {
+    const bucketName = "riaxo-bucket";
+    const key = `uploads/${uuidv4()}_${fileName}`;
+
+    const command = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        ACL: "public-read-write",
+    });
+
+    await s3.send(command);
+
+    return `https://${bucketName}.s3.amazonaws.com/${key}`;
+}
 
 exports.uploadImage = async (req, res, next) => {
     try {
@@ -21,8 +53,17 @@ exports.createAiImage = async (req, res, next) => {
             size: "1792x1024",
         });
 
-        const imageUrl = response.data;
-        res.send({ imageUrl: imageUrl });
+        const imageUrl = response.data?.[0].url;
+        const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+
+        let buffer = Buffer.from(imageResponse.data, "binary");
+
+        buffer = await sharp(buffer).jpeg({ quality: 90 }).toBuffer();
+
+        const fileName = `ai-thumbnail-${new Date().toISOString()}.jpg`;
+        const fileLocation = await uploadToS3(buffer, fileName, "image/jpeg");
+
+        res.send({ imageUrl: fileLocation });
     } catch (err) {
         next(err);
     }
