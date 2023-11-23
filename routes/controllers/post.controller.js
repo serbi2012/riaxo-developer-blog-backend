@@ -31,7 +31,17 @@ async function generateSummary(content, title, summaryCount = 2) {
 
 exports.getPostList = async (req, res, next) => {
     try {
-        const query = { ...(req?.query._id && { _id: req?.query._id }) };
+        let query = {};
+
+        if (req.query._id) {
+            query._id = req.query._id;
+        }
+
+        if (req.query.tags) {
+            const tags = req.query.tags.split(",");
+            query.tags = { $in: tags };
+        }
+
         const sortOptions = { createdAt: -1 };
 
         const allDocuments = await Post.find(query).sort(sortOptions).exec();
