@@ -42,6 +42,10 @@ exports.getPostList = async (req, res, next) => {
             query.tags = { $in: tags };
         }
 
+        if (req.query.title) {
+            query.title = { $regex: req.query.title, $options: "i" };
+        }
+
         const sortOptions = { createdAt: -1 };
 
         const allDocuments = await Post.find(query).sort(sortOptions).exec();
