@@ -7,6 +7,7 @@ const passport = require("passport");
 const indexRouter = require("./routes/index");
 const authRouter = require("./routes/auth");
 const postRouter = require("./routes/post");
+const tagRouter = require("./routes/tag");
 const imageRouter = require("./routes/image");
 
 const mongoDBConnect = require("./config/mongoDbConnect");
@@ -29,6 +30,7 @@ app.use(cookieParser());
 app.use("/", indexRouter);
 app.use("/auth", authRouter);
 app.use("/post", postRouter);
+app.use("/tag", tagRouter);
 app.use("/image", imageRouter);
 
 app.use(errorHandler);
