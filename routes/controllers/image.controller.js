@@ -18,7 +18,7 @@ const s3 = new S3Client({
 
 const openai = new OpenAI({ apiKey: ENV_VAR?.OPENAI_API_KEY });
 
-async function uploadToS3(buffer, fileName, contentType) {
+const uploadToS3 = async (buffer, fileName, contentType) => {
     const bucketName = "riaxo-bucket";
     const key = `uploads/${uuidv4()}_${fileName}`;
 
@@ -33,7 +33,7 @@ async function uploadToS3(buffer, fileName, contentType) {
     await s3.send(command);
 
     return `https://${bucketName}.s3.amazonaws.com/${key}`;
-}
+};
 
 exports.uploadImage = async (req, res, next) => {
     try {
@@ -46,9 +46,11 @@ exports.uploadImage = async (req, res, next) => {
 exports.createAiImage = async (req, res, next) => {
     try {
         const prompt = req.body.params.content;
+        const defaultPrompt =
+            "Create a clean, simple image in the illustrator style. And I wish it was 3D style. And I hope it's in an isometric style. Don't draw in English. Don't draw English because it breaks you. And I like simple and simple designs rather than complex ones. I emphasize once again, do not draw in English. Don't make English.";
         const response = await openai.images.generate({
             model: "dall-e-3",
-            prompt: `${prompt} Create a clean, simple image in the illustrator style. And I wish it was 3D style. And I hope it's in an isometric style. Don't draw in English. Don't draw English because it breaks you. And I like simple and simple designs rather than complex ones. I emphasize once again, do not draw in English. Don't make English.`,
+            prompt: `${prompt} ${defaultPrompt}`,
             n: 1,
             size: "1792x1024",
         });
