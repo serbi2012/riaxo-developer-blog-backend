@@ -1,5 +1,6 @@
 const ENV_VAR = require("../../config/environmentVariable");
 const Post = require("../../models/Post");
+const Tag = require("../../models/Tag");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
@@ -30,7 +31,21 @@ async function generateSummary(content, title, summaryCount = 2) {
 
 exports.getPostList = async (req, res, next) => {
     try {
-        const query = { ...(req?.query._id && { _id: req?.query._id }) };
+        let query = {};
+
+        if (req.query._id) {
+            query._id = req.query._id;
+        }
+
+        if (req.query.tags) {
+            const tags = req.query.tags.split(",");
+            query.tags = { $in: tags };
+        }
+
+        if (req.query.title) {
+            query.title = { $regex: req.query.title, $options: "i" };
+        }
+
         const sortOptions = { createdAt: -1 };
 
         const allDocuments = await Post.find(query).sort(sortOptions).exec();
@@ -76,6 +91,16 @@ exports.createPost = async (req, res, next) => {
             thumbnailURL: req.body.params.thumbnailURL,
         };
 
+        const tagsFromRequest = req.body.params.tags;
+        const existingTags = await Tag.find({ value: { $in: tagsFromRequest } });
+        const existingTagValues = existingTags.map((tag) => tag.value);
+        const newTags = tagsFromRequest.filter((tagValue) => !existingTagValues.includes(tagValue));
+
+        if (newTags.length > 0) {
+            const newTagDocuments = newTags.map((tagValue) => ({ value: tagValue }));
+            await Tag.insertMany(newTagDocuments);
+        }
+
         await Post.create(body);
 
         res.send({ data: {} });
@@ -120,7 +145,35 @@ exports.updatePost = async (req, res, next) => {
             thumbnailURL: req.body.params.thumbnailURL,
         };
 
-        await Post.findByIdAndUpdate(postId, body);
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).send({ message: "Post not found" });
+        }
+
+        const existingPostTags = post.tags || [];
+        const tagsFromRequest = req.body.params.tags;
+        const existingTags = await Tag.find({ value: { $in: tagsFromRequest } });
+        const existingTagValues = existingTags.map((tag) => tag.value);
+        const newTags = tagsFromRequest.filter((tagValue) => !existingTagValues.includes(tagValue));
+
+        if (newTags.length > 0) {
+            const newTagDocuments = newTags.map((tagValue) => ({ value: tagValue }));
+
+            await Tag.insertMany(newTagDocuments);
+        }
+
+        await Post.findByIdAndUpdate(postId, body, { new: true });
+
+        const removedTags = existingPostTags.filter((tagValue) => !tagsFromRequest.includes(tagValue));
+
+        for (const tagValue of removedTags) {
+            const isTagUsed = await Post.findOne({ tags: tagValue, _id: { $ne: postId } });
+
+            if (!isTagUsed) {
+                await Tag.findOneAndDelete({ value: tagValue });
+            }
+        }
 
         res.send({ data: {} });
     } catch (err) {
@@ -132,7 +185,23 @@ exports.deletePost = async (req, res, next) => {
     try {
         const postId = req.query._id;
 
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).send({ message: "Post not found" });
+        }
+
+        const tagsToRemove = post.tags || [];
+
         await Post.findByIdAndDelete(postId);
+
+        for (const tagValue of tagsToRemove) {
+            const isTagUsed = await Post.findOne({ tags: tagValue });
+
+            if (!isTagUsed) {
+                await Tag.findOneAndDelete({ value: tagValue });
+            }
+        }
 
         res.send({ data: {} });
     } catch (err) {
