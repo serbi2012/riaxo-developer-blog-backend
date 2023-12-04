@@ -19,7 +19,7 @@ const s3 = new S3Client({
 const openai = new OpenAI({ apiKey: ENV_VAR?.OPENAI_API_KEY });
 
 const uploadToS3 = async (buffer, fileName, contentType) => {
-    const bucketName = "riaxo-bucket";
+    const bucketName = "kim-tae-seop-bucket";
     const key = `uploads/${uuidv4()}_${fileName}`;
 
     const command = new PutObjectCommand({

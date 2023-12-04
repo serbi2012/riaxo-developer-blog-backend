@@ -17,7 +17,7 @@ const s3 = new S3Client({
 const imageUploader = multer({
     storage: multerS3({
         s3: s3,
-        bucket: "riaxo-bucket",
+        bucket: "kim-tae-seop-bucket",
         acl: "public-read-write",
         contentType: multerS3.AUTO_CONTENT_TYPE,
         key: (req, file, callback) => {
