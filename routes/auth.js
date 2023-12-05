@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.get("/github", passport.authenticate("github", { session: false }), authController.validateAuth);
 router.get("/user-info", verifyTokenMiddleware, authController.getUserInfo);
+router.post("/refresh", authController.refreshAccessToken);
 
 module.exports = router;
