@@ -22,4 +22,4 @@ jobs:
                       cd git/riaxo-developer-blog-backend
                       git pull
                       npm i
-                      pm2 start npm -- start
+                      pm2 start npm --name "riaxo-developer-blog-backend" -- start
