@@ -28,10 +28,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 app.use("/", indexRouter);
-app.use("/auth", authRouter);
-app.use("/post", postRouter);
-app.use("/tag", tagRouter);
-app.use("/image", imageRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/post", postRouter);
+app.use("/api/tag", tagRouter);
+app.use("/api/image", imageRouter);
 
 app.use(errorHandler);
 
