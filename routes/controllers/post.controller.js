@@ -56,6 +56,47 @@ exports.getPostList = async (req, res, next) => {
     }
 };
 
+exports.getNextPostList = async (req, res, next) => {
+    try {
+        console.log("exports.getNextPostList= ~ req.query:", req.query);
+        const lastId = req.query._id;
+        const limit = parseInt(req.query.limit, 10) || 10;
+
+        if (!lastId) {
+            return res.status(400).send({ message: "Missing parameter: _id" });
+        }
+
+        const query = { _id: { $gt: lastId } };
+        const sortOptions = { _id: 1 };
+
+        const posts = await Post.find(query).sort(sortOptions).limit(limit).exec();
+
+        res.send({ data: posts });
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getPrevPostList = async (req, res, next) => {
+    try {
+        const lastId = req.query._id;
+        const limit = parseInt(req.query.limit, 10) || 10;
+
+        if (!lastId) {
+            return res.status(400).send({ message: "Missing parameter: _id" });
+        }
+
+        const query = { _id: { $lt: lastId } };
+        const sortOptions = { _id: -1 };
+
+        const posts = await Post.find(query).sort(sortOptions).limit(limit).exec();
+
+        res.send({ data: posts.reverse() });
+    } catch (err) {
+        next(err);
+    }
+};
+
 exports.createPost = async (req, res, next) => {
     const $ = await cheerio.load(req.body.params.content);
     const textContent = $.text();
