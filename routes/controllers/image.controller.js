@@ -5,6 +5,14 @@ const { v4: uuidv4 } = require("uuid");
 const sharp = require("sharp");
 const ENV_VAR = require("../../config/environmentVariable");
 
+/**
+ * 환경 변수를 사용하여 S3 클라이언트를 생성.
+ *
+ * @type {S3Client}
+ * @see https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-s3/index.html
+ * @see https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-s3/classes/s3client.html
+ * @see https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-s3/interfaces/s3configuration.html
+ */
 const s3 = new S3Client({
     region: "ap-northeast-2",
     credentials: {
@@ -18,6 +26,15 @@ const s3 = new S3Client({
 
 const openai = new OpenAI({ apiKey: ENV_VAR?.OPENAI_API_KEY });
 
+/**
+ * 이미지를 업로드하는 함수.
+ * S3에 이미지를 업로드하고 업로드된 이미지의 경로를 반환.
+ *
+ * @param {Buffer} buffer - 업로드할 이미지의 데이터
+ * @param {string} fileName - 업로드할 이미지의 파일명
+ * @param {string} contentType - 업로드할 이미지의 MIME 타입
+ * @returns {Promise<string>} 업로드된 이미지의 경로를 반환하는 Promise 객체
+ */
 const uploadToS3 = async (buffer, fileName, contentType) => {
     const bucketName = "kim-tae-seop-bucket";
     const key = `uploads/${uuidv4()}_${fileName}`;
@@ -35,6 +52,14 @@ const uploadToS3 = async (buffer, fileName, contentType) => {
     return `https://${bucketName}.s3.amazonaws.com/${key}`;
 };
 
+/**
+ * 이미지를 업로드하는 API 엔드포인트.
+ * 이미지를 업로드하고 업로드된 이미지의 경로를 반환.
+ *
+ * @param {object} req - Express의 요청 객체
+ * @param {object} res - Express의 응답 객체
+ * @param {function} next - 다음 미들웨어 함수
+ */
 exports.uploadImage = async (req, res, next) => {
     try {
         res.send({ data: { path: req.file.location } });
@@ -43,6 +68,14 @@ exports.uploadImage = async (req, res, next) => {
     }
 };
 
+/**
+ * 이미지를 AI로 생성하는 API 엔드포인트.
+ * 이미지를 생성하고 생성된 이미지의 경로를 반환.
+ *
+ * @param {object} req - Express의 요청 객체
+ * @param {object} res - Express의 응답 객체
+ * @param {function} next - 다음 미들웨어 함수
+ */
 exports.createAiImage = async (req, res, next) => {
     try {
         const prompt = req.body.params.content;
