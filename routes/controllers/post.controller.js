@@ -4,6 +4,15 @@ const Tag = require("../../models/Tag");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
+/**
+ * 게시물 요약을 생성하는 함수.
+ * Naver Open API를 사용하여 주어진 컨텐츠와 제목에서 요약문을 생성.
+ *
+ * @param {string} content - 요약할 컨텐츠 내용
+ * @param {string} title - 컨텐츠의 제목
+ * @param {number} summaryCount - 생성할 요약문의 수 (기본값: 2)
+ * @returns {Promise<string>} 요약문을 반환하는 Promise 객체
+ */
 async function generateSummary(content, title, summaryCount = 2) {
     const response = await axios({
         method: "POST",
@@ -29,6 +38,14 @@ async function generateSummary(content, title, summaryCount = 2) {
     return response?.data?.summary;
 }
 
+/**
+ * 게시물 목록을 조회하는 API 엔드포인트.
+ * 쿼리 매개변수를 기반으로 게시물을 검색하고 결과를 반환.
+ *
+ * @param {object} req - Express의 요청 객체
+ * @param {object} res - Express의 응답 객체
+ * @param {function} next - 다음 미들웨어 함수
+ */
 exports.getPostList = async (req, res, next) => {
     try {
         let query = {};
@@ -48,7 +65,26 @@ exports.getPostList = async (req, res, next) => {
 
         const sortOptions = { createdAt: -1 };
 
-        const allDocuments = await Post.find(query).sort(sortOptions).exec();
+        let allDocuments = await Post.find(query).sort(sortOptions).exec();
+
+        if (req.query.nextPrevPost) {
+            allDocuments = await Promise.all(
+                allDocuments.map(async (post) => {
+                    const prevPost = await Post.findOne({ _id: { $lt: post._id } })
+                        .sort({ _id: -1 })
+                        .exec();
+                    const nextPost = await Post.findOne({ _id: { $gt: post._id } })
+                        .sort({ _id: 1 })
+                        .exec();
+
+                    return {
+                        ...post.toObject(),
+                        prevPost: prevPost ? prevPost.toObject() : null,
+                        nextPost: nextPost ? nextPost.toObject() : null,
+                    };
+                }),
+            );
+        }
 
         res.send({ data: allDocuments });
     } catch (err) {
@@ -56,46 +92,14 @@ exports.getPostList = async (req, res, next) => {
     }
 };
 
-exports.getNextPostList = async (req, res, next) => {
-    try {
-        const lastId = req.query._id;
-        const limit = parseInt(req.query.limit, 10) || 10;
-
-        if (!lastId) {
-            return res.status(400).send({ message: "Missing parameter: _id" });
-        }
-
-        const query = { _id: { $lt: lastId } };
-        const sortOptions = { _id: -1 };
-
-        const posts = await Post.find(query).sort(sortOptions).limit(limit).exec();
-
-        res.send({ data: posts.reverse() });
-    } catch (err) {
-        next(err);
-    }
-};
-
-exports.getPrevPostList = async (req, res, next) => {
-    try {
-        const lastId = req.query._id;
-        const limit = parseInt(req.query.limit, 10) || 10;
-
-        if (!lastId) {
-            return res.status(400).send({ message: "Missing parameter: _id" });
-        }
-
-        const query = { _id: { $gt: lastId } };
-        const sortOptions = { _id: 1 };
-
-        const posts = await Post.find(query).sort(sortOptions).limit(limit).exec();
-
-        res.send({ data: posts });
-    } catch (err) {
-        next(err);
-    }
-};
-
+/**
+ * 새로운 게시물을 생성하는 API 엔드포인트.
+ * 요청 본문에서 제공된 정보를 기반으로 게시물을 생성.
+ *
+ * @param {object} req - Express의 요청 객체
+ * @param {object} res - Express의 응답 객체
+ * @param {function} next - 다음 미들웨어 함수
+ */
 exports.createPost = async (req, res, next) => {
     const $ = await cheerio.load(req.body.params.content);
     const textContent = $.text();
@@ -149,6 +153,14 @@ exports.createPost = async (req, res, next) => {
     }
 };
 
+/**
+ * 기존 게시물을 업데이트하는 API 엔드포인트.
+ * 요청 본문에서 제공된 정보를 기반으로 특정 게시물을 업데이트.
+ *
+ * @param {object} req - Express의 요청 객체
+ * @param {object} res - Express의 응답 객체
+ * @param {function} next - 다음 미들웨어 함수
+ */
 exports.updatePost = async (req, res, next) => {
     const $ = await cheerio.load(req.body.params.content);
     const textContent = $.text();
@@ -221,6 +233,14 @@ exports.updatePost = async (req, res, next) => {
     }
 };
 
+/**
+ * 게시물을 삭제하는 API 엔드포인트.
+ * 쿼리 매개변수로 제공된 게시물 ID를 기반으로 게시물을 삭제.
+ *
+ * @param {object} req - Express의 요청 객체
+ * @param {object} res - Express의 응답 객체
+ * @param {function} next - 다음 미들웨어 함수
+ */
 exports.deletePost = async (req, res, next) => {
     try {
         const postId = req.query._id;
