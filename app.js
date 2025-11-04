@@ -22,8 +22,15 @@ mongoDBConnect(ENV_VAR.DB_URI);
 app.use(express.json());
 app.use(passport.initialize());
 passportConfig();
-app.use(cors({ origin: "*" }));
-app.use(logger("dev"));
+
+// CORS 설정 - 프로덕션 환경에서는 특정 도메인만 허용
+const cors_options = {
+    origin: ENV_VAR.FRONTEND_URL || "*",
+    credentials: true,
+};
+app.use(cors(cors_options));
+
+app.use(logger(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 

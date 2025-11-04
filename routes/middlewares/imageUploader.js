@@ -1,31 +1,43 @@
-const { S3Client } = require("@aws-sdk/client-s3");
 const multer = require("multer");
-const multerS3 = require("multer-s3");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 const ENV_VAR = require("../../config/environmentVariable");
 
-const s3 = new S3Client({
-    region: "ap-northeast-2",
-    credentials: {
-        accessKeyId: ENV_VAR?.ACCESS_KEY_ID,
-        secretAccessKey: ENV_VAR?.SECRET_ACCESS_KEY,
-    },
-    sslEnabled: false,
-    s3ForcePathStyle: true,
-    signatureVersion: "v4",
+// Cloudinary 설정
+cloudinary.config({
+  cloud_name: ENV_VAR?.CLOUDINARY_CLOUD_NAME,
+  api_key: ENV_VAR?.CLOUDINARY_API_KEY,
+  api_secret: ENV_VAR?.CLOUDINARY_API_SECRET,
+});
+
+// Cloudinary Storage 설정
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    const uploadDirectory = req.query.directory || "uploads";
+    
+    return {
+      folder: `riaxo-blog/${uploadDirectory}`,
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+      public_id: `${Date.now()}_${file.originalname.split('.')[0]}`,
+      resource_type: "auto",
+    };
+  },
 });
 
 const imageUploader = multer({
-    storage: multerS3({
-        s3: s3,
-        bucket: "kim-tae-seop-bucket",
-        acl: "public-read-write",
-        contentType: multerS3.AUTO_CONTENT_TYPE,
-        key: (req, file, callback) => {
-            const uploadDirectory = req.query.directory ?? "";
-
-            callback(null, `${uploadDirectory}/${Date.now()}_${file.originalname}`);
-        },
-    }),
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB 제한
+  },
+  fileFilter: (req, file, callback) => {
+    // 이미지 파일만 허용
+    if (file.mimetype.startsWith("image/")) {
+      callback(null, true);
+    } else {
+      callback(new Error("이미지 파일만 업로드 가능합니다."), false);
+    }
+  },
 });
 
 module.exports = imageUploader;

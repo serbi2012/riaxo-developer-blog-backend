@@ -5,14 +5,17 @@ const ENV_VAR = {
     DB_URI: process.env.DB_URI,
     NAVER_CLIENT_ID: process.env.NAVER_CLIENT_ID,
     NAVER_CLIENT_SECRET: process.env.NAVER_CLIENT_SECRET,
-    ACCESS_KEY_ID: process.env.ACCESS_KEY_ID,
-    SECRET_ACCESS_KEY: process.env.SECRET_ACCESS_KEY,
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+    GITHUB_CALLBACK_URL: process.env.GITHUB_CALLBACK_URL,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
     ADMIN_ID: process.env.ADMIN_ID,
+    FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
 };
 
 module.exports = ENV_VAR;
