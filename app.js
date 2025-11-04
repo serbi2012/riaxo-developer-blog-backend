@@ -23,9 +23,24 @@ app.use(express.json());
 app.use(passport.initialize());
 passportConfig();
 
-// CORS 설정 - 프로덕션 환경에서는 특정 도메인만 허용
+// CORS 설정 - Vercel Preview URLs와 Production URL 모두 허용
 const cors_options = {
-    origin: ENV_VAR.FRONTEND_URL || "*",
+    origin: function (origin, callback) {
+        // Origin이 없는 경우 (모바일 앱, Postman 등) 허용
+        if (!origin) return callback(null, true);
+        
+        const allowed_origins = ENV_VAR.FRONTEND_URL ? ENV_VAR.FRONTEND_URL.split(',') : [];
+        
+        // Vercel Preview URLs 패턴 매칭
+        const is_vercel_preview = origin.includes('vercel.app');
+        const is_allowed = allowed_origins.some(allowed => origin === allowed.trim());
+        
+        if (is_allowed || is_vercel_preview) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 };
 app.use(cors(cors_options));
